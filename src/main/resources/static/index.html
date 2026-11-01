@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f8f9fc">
+    <title>NoteSphere | Your thoughts, organized</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">N</div>
+                <span>NoteSphere</span>
+            </div>
+
+            <div class="sidebar-section">
+                <p class="section-label">WORKSPACE</p>
+                <button class="nav-item active" id="allNotesBtn">
+                    <span>▤</span> All Notes
+                    <span class="nav-count" id="noteCount">0</span>
+                </button>
+                <button class="nav-item" id="newNoteBtn">
+                    <span>＋</span> Create Note
+                </button>
+            </div>
+
+            <div class="sidebar-bottom">
+                <div class="profile">
+                    <div class="avatar">N</div>
+                    <div>
+                        <strong>My Workspace</strong>
+                        <small>Personal notes</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <p class="eyebrow">YOUR PERSONAL WORKSPACE</p>
+                    <h1>My Notes</h1>
+                    <p class="subtitle">Capture ideas. Keep everything organized.</p>
+                </div>
+                <button class="primary-btn" id="headerNewBtn">＋ New Note</button>
+            </header>
+
+            <section class="toolbar">
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input type="search" id="searchInput"
+                           placeholder="Search your notes...">
+                </div>
+                <span class="note-summary" id="noteSummary">0 notes</span>
+            </section>
+
+            <section class="notes-grid" id="notesGrid"></section>
+
+            <section class="empty-state" id="emptyState">
+                <div class="empty-icon">✎</div>
+                <h2>No notes yet</h2>
+                <p>Start capturing your thoughts and ideas.</p>
+                <button class="primary-btn" id="emptyNewBtn">Create your first note</button>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div>
+                    <p class="eyebrow">YOUR WORKSPACE</p>
+                    <h2 id="modalTitle">Create a note</h2>
+                </div>
+                <button class="close-btn" id="closeModalBtn" aria-label="Close">×</button>
+            </div>
+
+            <form id="noteForm">
+                <label for="titleInput">TITLE</label>
+                <input id="titleInput" type="text"
+                       placeholder="Give your note a title..." maxlength="120" required>
+
+                <label for="contentInput">CONTENT</label>
+                <textarea id="contentInput" rows="8"
+                          placeholder="Start writing your thoughts..." required></textarea>
+
+                <div class="modal-actions">
+                    <button type="button" class="secondary-btn" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="primary-btn" id="saveBtn">Save Note</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
