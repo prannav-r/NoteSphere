@@ -1,0 +1,42 @@
+﻿
+---
+- name: Deploy NoteSphere to Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    image_repository: acrnotesphere.azurecr.io/notesphere
+    image_tag: latest
+
+  tasks:
+    - name: Generate Kubernetes deployment manifest
+      ansible.builtin.template:
+        src: /ansible/k8s/deployment.yaml.j2
+        dest: /tmp/notesphere-deployment.yaml
+
+    - name: Deploy NoteSphere application
+      kubernetes.core.k8s:
+        state: present
+        namespace: default
+        src: /tmp/notesphere-deployment.yaml
+        wait: true
+        wait_timeout: 180
+
+    - name: Create NoteSphere NodePort service
+      kubernetes.core.k8s:
+        state: present
+        namespace: default
+        src: /ansible/k8s/service.yaml
+
+    - name: Verify NoteSphere deployment
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: notesphere
+        namespace: default
+      register: deployment_info
+
+    - name: Display deployment status
+      ansible.builtin.debug:
+        var: deployment_info.resources[0].status

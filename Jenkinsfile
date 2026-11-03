@@ -1,9 +1,8 @@
-
 pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'prannavr/notesphere'
+        IMAGE_NAME = 'acrnotesphere.azurecr.io/notesphere'
     }
 
     stages {
@@ -15,6 +14,36 @@ pipeline {
             }
         }
 
+	
+stage('Verify Jenkins Environment') {
+    steps {
+        bat '''
+            echo === Jenkins Service Account ===
+            whoami
+
+            echo === User Profile ===
+            echo %USERPROFILE%
+
+            echo === Kubernetes Configuration ===
+            if exist "%USERPROFILE%\\.kube\\config" (
+                echo Kubeconfig found
+            ) else (
+                echo Kubeconfig NOT found
+                exit /b 1
+            )
+
+            echo === Docker ===
+            docker info --format "{{.ServerVersion}}"
+            if errorlevel 1 exit /b 1
+
+            echo === Azure Authentication ===
+            az account show --query name -o tsv
+            if errorlevel 1 exit /b 1
+        '''
+    }
+}
+
+
         stage('Build and Test') {
             steps {
                 echo 'Building application and running JUnit tests'
@@ -24,28 +53,40 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image'
-                bat 'docker build -t %IMAGE_NAME%:latest .'
+                echo 'Building Docker image with Jenkins build number'
+                bat '''
+                    docker build -t %IMAGE_NAME%:%BUILD_NUMBER% .
+                    if errorlevel 1 exit /b 1
+                '''
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Push to ACR') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    bat '''
-                        @echo off
-                        echo %DOCKER_TOKEN%| docker login -u "%DOCKER_USER%" --password-stdin
-                        if errorlevel 1 exit /b 1
+                echo 'Pushing image to Azure Container Registry'
+                bat '''
+                    az acr login --name acrnotesphere
+                    if errorlevel 1 exit /b 1
 
-                        docker push %IMAGE_NAME%:latest
-                    '''
-                }
+                    docker push %IMAGE_NAME%:%BUILD_NUMBER%
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+        }
+
+        stage('Deploy to AKS using Ansible') {
+            steps {
+                echo 'Deploying NoteSphere to AKS using Ansible'
+
+                bat '''
+                    docker run --rm ^
+                      -v "%WORKSPACE%:/ansible" ^
+                      --mount "type=bind,source=%USERPROFILE%\\.kube,target=/root/.kube,readonly" ^
+                      notesphere-ansible:latest ^
+                      ansible-playbook /ansible/ansible/deploy.yml ^
+                      -e image_repository=%IMAGE_NAME% ^
+                      -e image_tag=%BUILD_NUMBER%
+                '''
             }
         }
     }
