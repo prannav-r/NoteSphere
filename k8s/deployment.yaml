@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notesphere
+  labels:
+    app: notesphere
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notesphere
+  template:
+    metadata:
+      labels:
+        app: notesphere
+    spec:
+      containers:
+        - name: notesphere
+          image: acrnotesphere.azurecr.io/notesphere:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+

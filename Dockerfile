@@ -1,20 +1,7 @@
-﻿# Stage 1: Build the application
-FROM maven:3.9.11-eclipse-temurin-21 AS build
+﻿FROM python:3.12-slim
 
-WORKDIR /app
+RUN pip install --no-cache-dir ansible kubernetes
 
-COPY pom.xml .
-COPY src ./src
+WORKDIR /ansible
 
-RUN mvn clean package -DskipTests
-
-# Stage 2: Run the application
-FROM eclipse-temurin:21-jre
-
-WORKDIR /app
-
-COPY --from=build /app/target/notesphere-0.0.1-SNAPSHOT.jar app.jar
-
-EXPOSE 8080
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["ansible", "--version"]
