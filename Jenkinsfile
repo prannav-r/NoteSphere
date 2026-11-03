@@ -43,6 +43,20 @@ stage('Verify Jenkins Environment') {
     }
 }
 
+stage('Gitleaks Secret Scan') {
+    steps {
+        echo 'Scanning repository for hardcoded secrets'
+
+        bat '''
+            docker run --rm ^
+              -v "%WORKSPACE%:/path" ^
+              zricethezav/gitleaks:latest ^
+              detect --source=/path --redact --verbose
+
+            if errorlevel 1 exit /b 1
+        '''
+    }
+}
 
         stage('Build and Test') {
             steps {
