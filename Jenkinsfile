@@ -61,18 +61,26 @@ stage('Verify Jenkins Environment') {
             }
         }
 
-        stage('Push to ACR') {
-            steps {
-                echo 'Pushing image to Azure Container Registry'
-                bat '''
-                    az acr login --name acrnotesphere
-                    if errorlevel 1 exit /b 1
+        
+stage('Push to ACR') {
+    steps {
+        echo 'Pushing image to Azure Container Registry'
+        bat '''
+            echo === Logging in to ACR ===
+            call az acr login --name acrnotesphere
+            if errorlevel 1 exit /b 1
 
-                    docker push %IMAGE_NAME%:%BUILD_NUMBER%
-                    if errorlevel 1 exit /b 1
-                '''
-            }
-        }
+            echo === Pushing application image ===
+            docker push %IMAGE_NAME%:%BUILD_NUMBER%
+            if errorlevel 1 exit /b 1
+
+            echo === Verifying pushed image ===
+            call az acr repository show --name acrnotesphere --image notesphere:%BUILD_NUMBER%
+            if errorlevel 1 exit /b 1
+        '''
+    }
+}
+
 
         stage('Deploy to AKS using Ansible') {
             steps {
