@@ -113,4 +113,3 @@ stage('Push to ACR') {
             echo 'Pipeline failed. Check the Console Output.'
         }
     }
-}
