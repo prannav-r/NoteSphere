@@ -5,15 +5,6 @@ pipeline {
         IMAGE_NAME = 'acrnotesphere.azurecr.io/notesphere'
     }
 
-    stages {
-
-        stage('Checkout') {
-            steps {
-                echo 'Checking out NoteSphere source code'
-                checkout scm
-            }
-        }
-
 	
 stage('Verify Jenkins Environment') {
     steps {
