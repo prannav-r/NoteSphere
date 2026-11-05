@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -5,49 +6,50 @@ pipeline {
         IMAGE_NAME = 'acrnotesphere.azurecr.io/notesphere'
     }
 
-	
-stage('Verify Jenkins Environment') {
-    steps {
-        bat '''
-            echo === Jenkins Service Account ===
-            whoami
+    stages {
 
-            echo === User Profile ===
-            echo %USERPROFILE%
+        stage('Verify Jenkins Environment') {
+            steps {
+                bat '''
+                    echo === Jenkins Service Account ===
+                    whoami
 
-            echo === Kubernetes Configuration ===
-            if exist "%USERPROFILE%\\.kube\\config" (
-                echo Kubeconfig found
-            ) else (
-                echo Kubeconfig NOT found
-                exit /b 1
-            )
+                    echo === User Profile ===
+                    echo %USERPROFILE%
 
-            echo === Docker ===
-            docker info --format "{{.ServerVersion}}"
-            if errorlevel 1 exit /b 1
+                    echo === Kubernetes Configuration ===
+                    if exist "%USERPROFILE%\\.kube\\config" (
+                        echo Kubeconfig found
+                    ) else (
+                        echo Kubeconfig NOT found
+                        exit /b 1
+                    )
 
-            echo === Azure Authentication ===
-            az account show --query name -o tsv
-            if errorlevel 1 exit /b 1
-        '''
-    }
-}
+                    echo === Docker ===
+                    docker info --format "{{.ServerVersion}}"
+                    if errorlevel 1 exit /b 1
 
-stage('Gitleaks Secret Scan') {
-    steps {
-        echo 'Scanning repository for hardcoded secrets'
+                    echo === Azure Authentication ===
+                    az account show --query name -o tsv
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+        }
 
-        bat '''
-            docker run --rm ^
-              -v "%WORKSPACE%:/path" ^
-              zricethezav/gitleaks:latest ^
-              detect --source=/path --redact --verbose
+        stage('Gitleaks Secret Scan') {
+            steps {
+                echo 'Scanning repository for hardcoded secrets'
 
-            if errorlevel 1 exit /b 1
-        '''
-    }
-}
+                bat '''
+                    docker run --rm ^
+                      -v "%WORKSPACE%:/path" ^
+                      zricethezav/gitleaks:latest ^
+                      detect --source=/path --redact --verbose
+
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+        }
 
         stage('Build and Test') {
             steps {
@@ -59,6 +61,7 @@ stage('Gitleaks Secret Scan') {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image with Jenkins build number'
+
                 bat '''
                     docker build -t %IMAGE_NAME%:%BUILD_NUMBER% .
                     if errorlevel 1 exit /b 1
@@ -66,26 +69,25 @@ stage('Gitleaks Secret Scan') {
             }
         }
 
-        
-stage('Push to ACR') {
-    steps {
-        echo 'Pushing image to Azure Container Registry'
-        bat '''
-            echo === Logging in to ACR ===
-            call az acr login --name acrnotesphere
-            if errorlevel 1 exit /b 1
+        stage('Push to ACR') {
+            steps {
+                echo 'Pushing image to Azure Container Registry'
 
-            echo === Pushing application image ===
-            docker push %IMAGE_NAME%:%BUILD_NUMBER%
-            if errorlevel 1 exit /b 1
+                bat '''
+                    echo === Logging in to ACR ===
+                    call az acr login --name acrnotesphere
+                    if errorlevel 1 exit /b 1
 
-            echo === Verifying pushed image ===
-            call az acr repository show --name acrnotesphere --image notesphere:%BUILD_NUMBER%
-            if errorlevel 1 exit /b 1
-        '''
-    }
-}
+                    echo === Pushing application image ===
+                    docker push %IMAGE_NAME%:%BUILD_NUMBER%
+                    if errorlevel 1 exit /b 1
 
+                    echo === Verifying pushed image ===
+                    call az acr repository show --name acrnotesphere --image notesphere:%BUILD_NUMBER%
+                    if errorlevel 1 exit /b 1
+                '''
+            }
+        }
 
         stage('Deploy to AKS using Ansible') {
             steps {
@@ -113,3 +115,4 @@ stage('Push to ACR') {
             echo 'Pipeline failed. Check the Console Output.'
         }
     }
+}
